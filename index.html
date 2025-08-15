@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird </title>
+    <title>Flappy Bird Clone</title>
     <style>
         * {
             margin: 0;
@@ -39,6 +39,14 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
+            /* Prevent touch callouts and selections on mobile */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
         }
 
         .ui-overlay {
@@ -83,8 +91,8 @@
         }
 
         .restart-btn {
-            padding: 12px 24px;
-            font-size: 1.1rem;
+            padding: 16px 32px;
+            font-size: 1.2rem;
             background: #4CAF50;
             color: white;
             border: none;
@@ -92,6 +100,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            min-height: 48px;
         }
 
         .restart-btn:hover {
@@ -129,11 +138,19 @@
         }
 
         @media (max-width: 480px) {
+            /* Make game fill entire screen on mobile */
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            
             .game-container {
                 border-radius: 0;
                 border: none;
                 max-width: 100vw;
                 max-height: 100vh;
+                width: 100vw;
+                height: 100vh;
             }
             
             .start-screen h1 {
@@ -142,6 +159,18 @@
             
             .start-screen p {
                 font-size: 1rem;
+            }
+        }
+        
+        /* Additional mobile optimizations */
+        @media (max-width: 768px) {
+            .game-container {
+                max-width: 100vw;
+                max-height: 100vh;
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                border: none;
             }
         }
     </style>
@@ -155,7 +184,9 @@
         
         <div class="ui-overlay start-screen" id="startScreen">
             <h1>🐦 Flappy Bird</h1>
-            <p>Tap to Start</p>
+            <p>Tap to fly and avoid the pipes!</p>
+            <!-- Added start button to the start screen -->
+            <button class="restart-btn" id="startBtn">Start Game</button>
         </div>
         
         <div class="ui-overlay game-over" id="gameOverScreen" style="display: none;">
@@ -176,6 +207,7 @@
                 this.highScoreDisplay = document.getElementById('highScore');
                 this.finalScore = document.getElementById('finalScore');
                 this.restartBtn = document.getElementById('restartBtn');
+                this.startBtn = document.getElementById('startBtn');
                 
                 this.setupCanvas();
                 this.initGame();
@@ -229,12 +261,32 @@
             }
             
             setupEventListeners() {
-                // Click/Touch events
-                this.canvas.addEventListener('click', (e) => this.handleInput(e));
-                this.canvas.addEventListener('touchstart', (e) => {
+                this.canvas.addEventListener('click', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     this.handleInput(e);
                 });
+                
+                this.canvas.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleInput(e);
+                });
+                
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleInput(e);
+                }, { passive: false });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                }, { passive: false });
                 
                 // Keyboard events
                 document.addEventListener('keydown', (e) => {
@@ -244,14 +296,18 @@
                     }
                 });
                 
+                this.startBtn.addEventListener('click', () => this.startGame());
+                
                 // Restart button
                 this.restartBtn.addEventListener('click', () => this.restart());
+                
+                this.canvas.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
             }
             
             handleInput(e) {
-                if (this.gameState === 'start') {
-                    this.startGame();
-                } else if (this.gameState === 'playing') {
+                if (this.gameState === 'playing') {
                     this.bird.velocity = this.bird.jumpPower;
                 }
             }
